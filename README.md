@@ -10,7 +10,7 @@ the following syntax:
 
 The required parameters are entered as key-value pairs and include:
 1. logspace name to search
-2. the search string, which uses the native search syntax of the SSB
+2. the search string, which uses the native search syntax of the SSB 
 3.,4. the search interval (granularity of days) by entering the start and end dates
 5. the hostname (or ip address) of the target SSB appliance on which the search will be performed
 
