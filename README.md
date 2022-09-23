@@ -11,13 +11,14 @@ the following syntax:
 The required parameters are entered as key-value pairs and include:
 1. logspace name to search
 2. the search string, which uses the native search syntax of the SSB 
-3.,4. the search interval (granularity of days) by entering the start and end dates
+3. the search interval start date
+4. the search interval end date
 5. the hostname (or ip address) of the target SSB appliance on which the search will be performed
 
 Only the values of the parameters are significant, the key part is arbitrary. For instance, the above search 
 can be implemented as follows:
 
-| ssb space=center mysearch=" cfinnan AND host:192.168.38.154" foo=01/01/2022 bar=08/24/2022 target=ssb
+| ssb space=center mysearch="jsmith AND host:myhost.mydomain.com" foo=01/01/2022 bar=08/24/2022 target=ssb
 
 and identical results will be returned. The keys and values must be separated by "=".
 
