@@ -20,11 +20,8 @@ if len(sys.argv) != 6:
     fourth argument is the end date\n \
     fifth argurment is the address or hosthame of the target SSB")
     exit(1)
-#logspace = sys.argv[1]
 logspace = sys.argv[1].split("=")[1]
-#searchstring = sys.argv[2]
 searchstring = sys.argv[2].split("=")[1]
-#print("searchstring = ", searchstring)
 s_begin = sys.argv[3].split("=")[1]
 s_end   = sys.argv[4].split("=")[1]
 server = sys.argv[5].split("=")[1]
@@ -41,8 +38,6 @@ to_time = int(time.mktime(datetime.datetime.strptime(s_end, "%m/%d/%Y").timetupl
 limit = 1000
 
 # login to SSB
-mysslcontext = ssl.create_default_context()
-mysslcontext.keylog_filename = "/root/secrets.log"
 credentials  = { 'username': 'ssbrest', 'password': 'Api$earch101'}
 url = "https://"+server+"/api/4/login"
 result = requests.post(url, credentials, verify=False)
@@ -77,6 +72,4 @@ for n in range(number_of_offsets) :
 #
        x.pop('delimiters')
        # mydata = [x]
-#        mydata = json.dumps(x)
-#splunk.Intersplunk.outputResults(mydata)
     splunk.Intersplunk.outputResults(json.data["result"])
