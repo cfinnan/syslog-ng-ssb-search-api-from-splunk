@@ -6,19 +6,19 @@ The filter command is the main command of the Search API. It retrieves log messa
 received records are filtered by time interval and search expression. The search is executed in Splunk using 
 the following syntax:
 
-| ssb logspace=center searchstring="jsmith AND host:myhost.mydomain.com" fromdate=2023-04-12T14:55:30 todate=2023-06-24T09:45:00 server=ssb
+| ssb logspace=center searchstring="jsmith AND host:myhost.mydomain.com" fromdate=01/01/2022 todate=08/24/2022 server=ssb
 
 The required parameters are entered as key-value pairs and include:
 1. logspace name to search
 2. the search string, which uses the native search syntax of the SSB 
-3. the search interval start date/time, ISO 8601 format: YYYY-MM-DDThh:mm:ss
+3. the search interval start date
 4. the search interval end date
 5. the hostname (or ip address) of the target SSB appliance on which the search will be performed
 
 Only the values of the parameters are significant, the key part is arbitrary. For instance, the above search 
 can be implemented as follows:
 
-| ssb space=center mysearch="jsmith AND host:myhost.mydomain.com" foo=2023-04-12T14:55:30 bar=2023-06-24T09:45:00 target=ssb
+| ssb space=center mysearch="jsmith AND host:myhost.mydomain.com" foo=01/01/2022 bar=08/24/2022 target=ssb
 
 and identical results will be returned. The keys and values must be separated by "=".
 
