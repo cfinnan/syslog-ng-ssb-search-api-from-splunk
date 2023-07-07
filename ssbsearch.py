@@ -37,7 +37,8 @@ if (arg3chk) == None or (arg4chk) == None:
 # need to convert interval start to Unix Timestamp (i.e., seconds since Jan. 1, 1970)
 from_time = datetime.datetime.strptime(s_begin,'%Y-%m-%dT%H:%M:%S')
 from_time = int(from_time.timestamp())
-to_time = int(time.mktime(datetime.datetime.strptime(s_end, "%Y-%m-%dT%H:%M:%S").timetuple()))
+to_time = datetime.datetime.strptime(s_end,'%Y-%m-%dT%H:%M:%S')
+to_time = int(to_time.timestamp())
 # make sure SSB returns the maximum number of results for each query
 limit = 1000
 
