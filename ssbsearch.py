@@ -54,12 +54,12 @@ r = requests.get(url, verify=False, headers=header)
 json.data = json.loads(r.text)
 json_output = json.dumps(json.data, indent=2)
 number_of_msgs =json.data["result"]
-number_of_offsets = number_of_msgs//1000 + 1
-for n in range(number_of_offsets) :
+number_of_steps = number_of_msgs//1000 + 1
+for n in range(number_of_steps) :
 
 #
 ##############################################################
-    offset =  n
+    offset =  n * 1000
     #print(offset)
     url = "https://"+server+"/api/4/search/logspace/filter/%s?from=%d&to=%s&search_expression=%s&offset=%s&limit=%s" % (logspace, from_time, to_time, searchstring, offset,limit)
 # generate query (http get)
