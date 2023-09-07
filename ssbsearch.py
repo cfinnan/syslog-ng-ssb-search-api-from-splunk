@@ -46,13 +46,10 @@ message = json.data.get('error', {}).get('message')
 if not error == None:
    print("response code =", error,"\nmessage =", message)
    exit(1)
-#token = json.data["result"]
-#header = {"Cookie": "AUTHENTICATION_TOKEN="+token}
-#
 #
 # check that a valid, indexed logspace name has been specified
 url = "https://"+server+"/api/4/search/logspace/list_logspaces"
-r = requests.get(url,verify=False, headers=header)
+r = s.get(url,verify=False)
 json.data = json.loads(r.text)
 logspace_list = json.data["result"]
 if not logspace in logspace_list:
@@ -62,9 +59,8 @@ if not logspace in logspace_list:
 # SSB will only return a maximum of 1,000 results per query
 # We will have to loop with multiple requests using the "offset" parameter.
 url = "https://"+server+"/api/4/search/logspace/number_of_messages/%s?from=%d&to=%s&search_expression=%s" % (logspace, from_time, to_time, searchstring)
-r = requests.get(url, verify=False, headers=header)
+r = s.get(url, verify=False)
 json.data = json.loads(r.text)
-json_output = json.dumps(json.data, indent=2)
 number_of_msgs =json.data["result"]
 number_of_steps = number_of_msgs//1000 + 1
 for n in range(number_of_steps) :
@@ -75,7 +71,7 @@ for n in range(number_of_steps) :
     #print(offset)
     url = "https://"+server+"/api/4/search/logspace/filter/%s?from=%d&to=%s&search_expression=%s&offset=%s&limit=%s" % (logspace, from_time, to_time, searchstring, offset,limit)
 # generate query (http get)
-    r = requests.get(url, verify=False, headers=header)
+    r = s.get(url, verify=False)
 
 # convert api output json to python dict
     json.data = json.loads(r.text)
