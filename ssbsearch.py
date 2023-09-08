@@ -75,11 +75,10 @@ for n in range(number_of_steps) :
 
 # convert api output json to python dict
     json.data = json.loads(r.text)
-    number_msgs = len(json.data["result"])
     if json.data["result"] != None:
          for x in json.data["result"]:
             timestamp = int(x["timestamp"]) 
             x["timestamp"] = str(datetime.datetime.fromtimestamp(timestamp))
 #
             x.pop('delimiters')
-    splunk.Intersplunk.outputResults(json.data["result"])
+         splunk.Intersplunk.outputResults(json.data["result"])
