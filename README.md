@@ -8,7 +8,7 @@ the following syntax:
 
 | ssb logspace=center searchstring="jsmith AND host:myhost.mydomain.com" fromdate=2023-06-30T09:35:00 todate=2023-06-30T10:55:00 server=ssb
 
-Although the arguments appear to be keyword arguments, they are in fact posistional. They are entered using key=value syntax in the following order:
+Although the arguments appear to be keyword arguments, they are in fact positional. They are entered using key=value syntax in the following order:
 
 1. logspace name to search
 2. the search string, which uses the native search syntax of the SSB 
@@ -16,10 +16,9 @@ Although the arguments appear to be keyword arguments, they are in fact posistio
 4. the search interval end date
 5. the hostname (or ip address) of the target SSB appliance on which the search will be performed
 
-Because the aruguents are positional, only the values of the parameters are significant, the key part is arbitrary. For instance, the above search 
-can be implemented as follows:
+Because the aruguents are positional, only the values of the parameters are significant, the key part is arbitrary. For instance, the above search can be implemented as follows:
 
-| ssb space=center mysearch="jsmith AND host:myhost.mydomain.com" foo=01/01/2022 bar=08/24/2022 target=ssb
+| ssb space=center mysearch="jsmith AND host:myhost.mydomain.com" foo=2023-06-30T09:35:00 bar=2023-06-30T10:55:00 target=ssb
 
 and identical results will be returned. The keys and values must be separated by "=".
 
