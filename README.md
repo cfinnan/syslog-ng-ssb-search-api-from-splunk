@@ -24,3 +24,5 @@ and identical results will be returned. The keys and values must be separated by
 
 This has to be associated with a Splunk custom app. You will have create the app in Splunk, and place the Python script in the app's bin
 directory. In the app's local directory, you will need a file named commands.conf that points to your Python script in bin.
+
+api_test.py is a program that can be used to test an SSB REST API search from an OS command line (i.e., not from the Splunk search interface). This exapmple assumes Linux, where the the python3 interpreter is installed in /usr/bin/.

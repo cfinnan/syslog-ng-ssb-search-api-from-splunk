@@ -42,7 +42,7 @@ to_time = int(to_time.timestamp())
 limit = 1000
 
 # login to SSB
-credentials  = { 'username': 'ssbrest', 'password': 'Api$earch101'}
+credentials  = { 'username': '<username>', 'password': '<password>'}
 url = "https://"+server+"/api/4/login"
 result = requests.post(url, credentials, verify=False)
 json.data=json.loads(result.text)
