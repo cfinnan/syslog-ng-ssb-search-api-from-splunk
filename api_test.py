@@ -73,10 +73,10 @@ for n in range(number_of_offsets) :
 
 # convert api output json to python dict
     json.data = json.loads(r.text)
-    number_msgs = len(json.data["result"])
-    for x in json.data["result"]:
-       timestamp = int(x["timestamp"]) 
-       x["timestamp"] = str(datetime.datetime.fromtimestamp(timestamp))
+    if json.data["result"] != None:
+        for x in json.data["result"]:
+           timestamp = int(x["timestamp"]) 
+           x["timestamp"] = str(datetime.datetime.fromtimestamp(timestamp))
 #
-       x.pop('delimiters')
-    print(*json.data["result"], sep="\n")
+           x.pop('delimiters')
+        print(*json.data["result"], sep="\n")
