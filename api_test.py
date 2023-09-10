@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+"""Module to test SSB REST-API Search from command line"""
 import sys
 import re
 import json
@@ -10,7 +11,8 @@ import requests
 # subsequent get() requests after login authentication done through the post
 # request.
 # run as follows from the directory in which you store the script:
-#  ./api_test.py logspace=center search="<search terms>" start=2023-01-18T11:34:00 end=2023-08-30T09:36:00 server=<ssb hostname>
+#  ./api_test.py logspace=center search="<search terms>" \
+# start=2023-01-18T11:34:00 end=2023-08-30T09:36:00 server=<ssb hostname>
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 if len(sys.argv) != 6:
     print("requires five arguments: first argument is the logspace name,\n \
@@ -40,7 +42,15 @@ LIMIT = 1000
 # login to SSB
 credentials  = { 'username': '<username>', 'password': '<password>'}
 url = "https://"+server+"/api/4/login"
-result = requests.post(url, credentials, verify=False)
+try:
+    result = requests.post(url, verify=False, timeout=3.05)
+except requests.exceptions.ReadTimeout:
+    print("Timeout raised logging into SSB")
+    exit(1)
+except requests.exceptions.ConnectTimeout:
+    #raise requests.exceptions.ConnectionError
+    print("Can't connect to SSB")
+    exit(1)
 json.data=json.loads(result.text)
 token = json.data["result"]
 header = {"Cookie": "AUTHENTICATION_TOKEN="+token}
@@ -49,7 +59,9 @@ header = {"Cookie": "AUTHENTICATION_TOKEN="+token}
 # SSB will only return a maximum of 1,000 results per query
 # We will have to loop with multiple requests using the "offset" parameter.
 
-url = "https://"+server+"/api/4/search/logspace/number_of_messages/%s?from=%d&to=%s&search_expression=%s" % (logspace, from_time, to_time, searchstring)
+url = "https://"+server+"/api/4/search/logspace/number_of_messages/%s?\
+from=%d&to=%s\
+&search_expression=%s" % (logspace, from_time, to_time, searchstring)
 r = requests.get(url, verify=False, headers=header)
 json.data = json.loads(r.text)
 number_of_msgs =json.data["result"]
@@ -59,18 +71,18 @@ for n in range(number_of_offsets) :
 
 #
 ##############################################################
-    offset =  n * 1000
+    offset =  n * LIMIT
     #print(offset)
     url = "https://"+server+"/api/4/search/logspace/filter/%s?from=%d&to=%s\
-&search_expression=%s&offset=%s&limit=%s" % (logspace, from_time, to_time, searchstring, offset,LIMIT)
+&search_expression=%s&offset=%s&limit=%s" % (logspace, from_time, to_time, \
+searchstring, offset, LIMIT)
 # generate query (http get)
     r = requests.get(url, verify=False, headers=header)
 # convert api output json to python dict
     json.data = json.loads(r.text)
     if json.data["result"] is not None:
         for x in json.data["result"]:
-           timestamp = int(x["timestamp"]) 
-           x["timestamp"] = str(datetime.datetime.fromtimestamp(timestamp))
-#
-           x.pop('delimiters')
+            timestamp = int(x["timestamp"])
+            x["timestamp"] = str(datetime.datetime.fromtimestamp(timestamp))
+            x.pop('delimiters')
         print(*json.data["result"], sep="\n")
