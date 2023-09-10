@@ -66,7 +66,7 @@ for n in range(number_of_steps) :
 
 #
 ##############################################################
-    offset =  n * 1000
+    offset =  n * LIMIT
     url = "https://"+server+"/api/4/search/logspace/filter/%s?from=%d&to=%s\
 &search_expression=%s&offset=%s&limit=%s" % (logspace, from_time, to_time, \
 searchstring, offset,LIMIT)
