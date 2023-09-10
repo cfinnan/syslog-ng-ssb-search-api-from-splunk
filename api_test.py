@@ -61,7 +61,8 @@ for n in range(number_of_offsets) :
 ##############################################################
     offset =  n * 1000
     #print(offset)
-    url = "https://"+server+"/api/4/search/logspace/filter/%s?from=%d&to=%s&search_expression=%s&offset=%s&limit=%s" % (logspace, from_time, to_time, searchstring, offset,limit)
+    url = "https://"+server+"/api/4/search/logspace/filter/%s?from=%d&to=%s\
+&search_expression=%s&offset=%s&limit=%s" % (logspace, from_time, to_time, searchstring, offset,LIMIT)
 # generate query (http get)
     r = requests.get(url, verify=False, headers=header)
 # convert api output json to python dict
