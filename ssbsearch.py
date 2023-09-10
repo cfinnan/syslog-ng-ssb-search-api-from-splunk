@@ -1,10 +1,11 @@
+"""Module to perform SSB search from Splunk"""
 import sys
 import re
 import json
 import csv
-import urllib3
-import splunk.Intersplunk
 import datetime
+import splunk.Intersplunk
+import urllib3
 import requests
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 if len(sys.argv) != 6:
@@ -55,7 +56,8 @@ if not logspace in logspace_list:
 # First get the number of messages that meet the search criteria
 # SSB will only return a maximum of 1,000 results per query
 # We will have to loop with multiple requests using the "offset" parameter.
-url = "https://"+server+"/api/4/search/logspace/number_of_messages/%s?from=%d&to=%s&search_expression=%s" % (logspace, from_time, to_time, searchstring)
+url = "https://"+server+"/api/4/search/logspace/number_of_messages/%s?from=%d&to=%s\
+&search_expression=%s" % (logspace, from_time, to_time, searchstring)
 r = s.get(url, verify=False)
 json.data = json.loads(r.text)
 number_of_msgs =json.data["result"]
@@ -65,8 +67,9 @@ for n in range(number_of_steps) :
 #
 ##############################################################
     offset =  n * 1000
-    #print(offset)
-    url = "https://"+server+"/api/4/search/logspace/filter/%s?from=%d&to=%s&search_expression=%s&offset=%s&limit=%s" % (logspace, from_time, to_time, searchstring, offset,LIMIT)
+    url = "https://"+server+"/api/4/search/logspace/filter/%s?from=%d&to=%s\
+&search_expression=%s&offset=%s&limit=%s" % (logspace, from_time, to_time, \
+searchstring, offset,LIMIT)
 # generate query (http get)
     r = s.get(url, verify=False)
 
@@ -74,8 +77,8 @@ for n in range(number_of_steps) :
     json.data = json.loads(r.text)
     if json.data["result"] is not None:
         for x in json.data["result"]:
-            timestamp = int(x["timestamp"]) 
+            timestamp = int(x["timestamp"])
             x["timestamp"] = str(datetime.datetime.fromtimestamp(timestamp))
-#
             x.pop('delimiters')
         splunk.Intersplunk.outputResults(json.data["result"])
+        
