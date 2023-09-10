@@ -1,20 +1,18 @@
 #!/usr/bin/python3
+"""Module to test SSB REST-API Search"""
 import sys
 import re
-import requests
-import ssl
-import socket
 import json
-import csv
-import urllib3
-import time
 import datetime
+import urllib3
+import requests
 # This version uses the requests module but without using requests.Session()
 # We have to handle the returned Authentication_token cookie ourselves for
 # subsequent get() requests after login authentication done through the post
 # request.
 # run as follows from the directory in which you store the script:
-#  ./api_test.py logspace=center search="<search terms>" start=2023-01-18T11:34:00 end=2023-08-30T09:36:00 server=<ssb hostname>
+#  ./api_test.py logspace=center search="<search terms>" start=2023-01-18T11:34:00 \
+# end=2023-08-30T09:36:00 server=<ssb hostname>
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 if len(sys.argv) != 6:
     print("requires five arguments: first argument is the logspace name,\n \
@@ -27,9 +25,9 @@ searchstring = sys.argv[2].split("=")[1]
 s_begin = sys.argv[3].split("=")[1]
 s_end   = sys.argv[4].split("=")[1]
 server = sys.argv[5].split("=")[1]
-arg3chk = re.match("^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$", s_begin)
-arg4chk = re.match("^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$", s_end)
-if (arg3chk) == None or (arg4chk) == None:
+arg3chk = re.match("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$", s_begin)
+arg4chk = re.match("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$", s_end)
+if (arg3chk) is None or (arg4chk) is None:
     print("date format must be YYYY-MM-DDThh:mm:ss")
     exit(1)
 #
@@ -39,12 +37,20 @@ from_time = int(from_time.timestamp())
 to_time = datetime.datetime.strptime(s_end,'%Y-%m-%dT%H:%M:%S')
 to_time = int(to_time.timestamp())
 # make sure SSB returns the maximum number of results for each query
-limit = 1000
+LIMIT = 1000
 
 # login to SSB
 credentials  = { 'username': '<username>', 'password': '<password>'}
 url = "https://"+server+"/api/4/login"
-result = requests.post(url, credentials, verify=False)
+try:
+    result = requests.post(url, verify=False, timeout=3.05)
+except requests.exceptions.ReadTimeout:
+    print("Timeout raised logging into SSB")
+    exit(1)
+except requests.exceptions.ConnectTimeout:
+    #raise requests.exceptions.ConnectionError
+    print("Can't connect to SSB")
+    exit(1)
 json.data=json.loads(result.text)
 token = json.data["result"]
 header = {"Cookie": "AUTHENTICATION_TOKEN="+token}
@@ -53,13 +59,13 @@ header = {"Cookie": "AUTHENTICATION_TOKEN="+token}
 # SSB will only return a maximum of 1,000 results per query
 # We will have to loop with multiple requests using the "offset" parameter.
 
-url = "https://"+server+"/api/4/search/logspace/number_of_messages/%s?from=%d&to=%s&search_expression=%s" % (logspace, from_time, to_time, searchstring)
+url = "https://"+server+"/api/4/search/logspace/number_of_messages/%s?from=%d\
+&to=%s&search_expression=\
+%s" % (logspace, from_time, to_time, searchstring)
 r = requests.get(url, verify=False, headers=header)
 json.data = json.loads(r.text)
 number_of_msgs =json.data["result"]
-#print("number of messages = " , number_of_msgs)
-number_of_offsets = number_of_msgs//1000 + 1
-#print("number_of_offsets = ", number_of_offsets)
+number_of_offsets = number_of_msgs//LIMIT + 1
 
 for n in range(number_of_offsets) :
 
@@ -67,16 +73,15 @@ for n in range(number_of_offsets) :
 ##############################################################
     offset =  n * 1000
     #print(offset)
-    url = "https://"+server+"/api/4/search/logspace/filter/%s?from=%d&to=%s&search_expression=%s&offset=%s&limit=%s" % (logspace, from_time, to_time, searchstring, offset,limit)
+    url = "https://"+server+"/api/4/search/logspace/filter/%s?from=%d&to=%s&search_expression=\
+%s&offset=%s&limit=%s" % (logspace, from_time, to_time, searchstring, offset,LIMIT)
 # generate query (http get)
     r = requests.get(url, verify=False, headers=header)
-
 # convert api output json to python dict
     json.data = json.loads(r.text)
-    if json.data["result"] != None:
+    if json.data["result"] is not None:
         for x in json.data["result"]:
-           timestamp = int(x["timestamp"]) 
-           x["timestamp"] = str(datetime.datetime.fromtimestamp(timestamp))
-#
-           x.pop('delimiters')
+            timestamp = int(x["timestamp"])
+            x["timestamp"] = str(datetime.datetime.fromtimestamp(timestamp))
+            x.pop('delimiters')
         print(*json.data["result"], sep="\n")
