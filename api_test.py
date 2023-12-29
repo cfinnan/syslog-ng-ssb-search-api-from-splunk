@@ -1,49 +1,90 @@
 #!/usr/bin/python3
 """Module to test SSB REST-API Search from command line"""
-import sys
+
 import re
 import json
 import datetime
+import os
+import argparse
 import urllib3
 import requests
+
 # This version uses the requests module but without using requests.Session()
 # We have to handle the returned Authentication_token cookie ourselves for
 # subsequent get() requests after login authentication done through the post
 # request.
-# run as follows from the directory in which you store the script:
-#  ./api_test.py logspace=center search="<search terms>" \
-# start=2023-01-18T11:34:00 end=2023-08-30T09:36:00 server=<ssb hostname>
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-if len(sys.argv) != 6:
-    print("requires five arguments: first argument is the logspace name,\n \
-    second argument is the search string, third argument is start date/time,\n,\
-    fourth argument is the end date/time\n \
-    fifth argurment is the address or hosthame of the target SSB")
+
+# Global parser for access by functions
+parser = argparse.ArgumentParser(prog="api_test.py", \
+    description='This utility performs searches against a Syslog-ng Store Box')
+
+parser.add_argument('--logspace', help='Logspace to search', \
+    default=os.environ.get('LOGSPACE'))
+parser.add_argument('--search_expression', help='Search expression to be used against logspace', \
+    default=os.environ.get('SEARCH_EXPRESSION'))
+parser.add_argument('--from_time', help='Time to start search from in YYYY-MM-DDThh:mm:ss format', \
+    default=os.environ.get('FROM_TIME'))
+parser.add_argument('--to_time', help='Time to end searching from in YYYY-MM-DDThh:mm:ss format', \
+    default=os.environ.get('TO_TIME'))
+parser.add_argument('--ssb_host', help='SSB FQDN or IP Address', \
+    default=os.environ.get('SSB_HOST'))
+parser.add_argument('--ssb_username', help='Username to authenticate against SSB with', \
+    default=os.environ.get('SSB_USERNAME'))
+parser.add_argument('--ssb_password', help='Password for SSB authentication', \
+    default=os.environ.get('SSB_PASSWORD'))
+parser.add_argument('--verify', help='Require verified SSL certificates', \
+    default=os.environ.get('VERIFY'), action="store_true")
+
+# Parse cli options and environment variables
+args = parser.parse_args()
+
+# Ensure minimal parameters are provided
+if args.ssb_host is None or args.ssb_username is None or args.ssb_password is None:
+    parser.print_help()
     exit(1)
-logspace = sys.argv[1].split("=")[1]
-searchstring = sys.argv[2].split("=")[1]
-s_begin = sys.argv[3].split("=")[1]
-s_end   = sys.argv[4].split("=")[1]
-server = sys.argv[5].split("=")[1]
-arg3chk = re.match("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$", s_begin)
-arg4chk = re.match("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$", s_end)
-if (arg3chk) is None or (arg4chk) is None:
-    print("date format must be YYYY-MM-DDThh:mm:ss")
+
+# Disable certificate validation unless verification is configured
+VERIFY=True
+if args.verify is None:
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    VERIFY=False
+
+# Validate from_time
+if args.from_time is None or \
+    re.match("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$", args.from_time) is None:
+    print(f'No or invalid from_time specified ({args.from_time}), defaulting to 1 hour ago')
+    timestamp = datetime.datetime.now() - datetime.timedelta(hours=1)
+    args.from_time = datetime.datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S")
+
+# Validate to_time
+if args.to_time is None or \
+    re.match("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$", args.to_time) is None:
+    print(f'No or invalid from_time specified ({args.to_time}), defaulting to now')
+    args.to_time = datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%dT%H:%M:%S")
+
+# Convert start and end times to Unix Timestamp (i.e., seconds since Jan. 1, 1970)
+try:
+    from_time = datetime.datetime.strptime(args.from_time,'%Y-%m-%dT%H:%M:%S')
+    from_time = str(int(from_time.timestamp()))
+except Exception as ex:
+    print("Failed to convert {args.from_time} to Unix timestamp: {ex}")
     exit(1)
-#
-# need to convert interval start and end to Unix Timestamp (i.e., seconds since Jan. 1, 1970)
-from_time = datetime.datetime.strptime(s_begin,'%Y-%m-%dT%H:%M:%S')
-from_time = int(from_time.timestamp())
-to_time = datetime.datetime.strptime(s_end,'%Y-%m-%dT%H:%M:%S')
-to_time = int(to_time.timestamp())
+
+try:
+    to_time = datetime.datetime.strptime(args.to_time,'%Y-%m-%dT%H:%M:%S')
+    to_time = str(int(to_time.timestamp()))
+except Exception as ex:
+    print("Failed to convert {args.from_time} to Unix timestamp: {ex}")
+    exit(1)
+
 # make sure SSB returns the maximum number of results for each query
 LIMIT = 1000
 
 # login to SSB
-credentials  = { 'username': '<username>', 'password': '<password>'}
-url = "https://"+server+"/api/4/login"
+credentials  = { 'username': args.ssb_username, 'password': args.ssb_password}
+url = "https://"+args.ssb_host+"/api/4/login"
 try:
-    result = requests.post(url, verify=False, timeout=3.05)
+    result = requests.post(url, verify=VERIFY, data=credentials, timeout=10)
 except requests.exceptions.ReadTimeout:
     print("Timeout raised logging into SSB")
     exit(1)
@@ -59,26 +100,25 @@ header = {"Cookie": "AUTHENTICATION_TOKEN="+token}
 # SSB will only return a maximum of 1,000 results per query
 # We will have to loop with multiple requests using the "offset" parameter.
 
-url = "https://"+server+"/api/4/search/logspace/number_of_messages/%s?\
-from=%d&to=%s\
-&search_expression=%s" % (logspace, from_time, to_time, searchstring)
-r = requests.get(url, verify=False, headers=header)
+url = "https://"+args.ssb_host+"/api/4/search/logspace/number_of_messages/"+ \
+    args.logspace+"?from="+from_time+"&to="+to_time+"&search_expression="+args.search_expression
+r = requests.get(url, verify=VERIFY, headers=header, timeout=10)
 json.data = json.loads(r.text)
 number_of_msgs =json.data["result"]
 number_of_offsets = number_of_msgs//LIMIT + 1
 
 for n in range(number_of_offsets) :
 
-#
-##############################################################
     offset =  n * LIMIT
-    #print(offset)
-    url = "https://"+server+"/api/4/search/logspace/filter/%s?from=%d&to=%s\
-&search_expression=%s&offset=%s&limit=%s" % (logspace, from_time, to_time, \
-searchstring, offset, LIMIT)
-# generate query (http get)
-    r = requests.get(url, verify=False, headers=header)
-# convert api output json to python dict
+
+    url = "https://"+args.ssb_host+"/api/4/search/logspace/filter/"+ \
+        args.logspace+"?from="+from_time+"&to="+to_time+"&search_expression="+ \
+        args.search_expression+"&offset="+str(offset)+"&limit="+str(LIMIT)
+
+    # generate query (http get)
+    r = requests.get(url, verify=VERIFY, headers=header, timeout=10)
+
+    # convert api output json to python dict
     json.data = json.loads(r.text)
     if json.data["result"] is not None:
         for x in json.data["result"]:
@@ -86,3 +126,4 @@ searchstring, offset, LIMIT)
             x["timestamp"] = str(datetime.datetime.fromtimestamp(timestamp))
             x.pop('delimiters')
         print(*json.data["result"], sep="\n")
+
