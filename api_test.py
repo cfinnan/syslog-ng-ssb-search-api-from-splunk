@@ -59,7 +59,7 @@ if args.from_time is None or \
 # Validate to_time
 if args.to_time is None or \
     re.match("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}$", args.to_time) is None:
-    print(f'No or invalid from_time specified ({args.to_time}), defaulting to now')
+    print(f'No or invalid to_time specified ({args.to_time}), defaulting to now')
     args.to_time = datetime.datetime.strftime(datetime.datetime.now(), "%Y-%m-%dT%H:%M:%S")
 
 # Convert start and end times to Unix Timestamp (i.e., seconds since Jan. 1, 1970)
@@ -92,8 +92,15 @@ except requests.exceptions.ConnectTimeout:
     #raise requests.exceptions.ConnectionError
     print("Can't connect to SSB")
     exit(1)
-json.data=json.loads(result.text)
-token = json.data["result"]
+try:
+    json.data=json.loads(result.text)
+    token = json.data["result"]
+except Exception as ex:
+    print("Error decoding response %s : %s" % (result.text, ex))
+    exit(1)
+if not token:
+    print("Authentication failure : %s" % result.text)
+    exit(1)
 header = {"Cookie": "AUTHENTICATION_TOKEN="+token}
 
 # First get the number of messages that meet the search criteria
@@ -126,4 +133,3 @@ for n in range(number_of_offsets) :
             x["timestamp"] = str(datetime.datetime.fromtimestamp(timestamp))
             x.pop('delimiters')
         print(*json.data["result"], sep="\n")
-
